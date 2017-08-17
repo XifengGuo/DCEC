@@ -1,0 +1,10 @@
+# Created by .ignore support plugin (hsz.mobi)
+.idea/
+data/usps/*
+!data/usps/*.sh
+model/
+results/
+*.bak
+svm-classification.ipynb
+__pycache__/
+datasets.pyc
