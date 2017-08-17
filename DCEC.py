@@ -235,6 +235,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
     print(args)
 
+    import os
+    if not os.path.exists(args.save_dir):
+        os.makedirs(args.save_dir)
+
     # load dataset
     from datasets import load_mnist, load_usps
     if args.dataset == 'mnist':
