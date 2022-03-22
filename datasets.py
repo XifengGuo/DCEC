@@ -1,4 +1,6 @@
 import numpy as np
+import reader.SequenceReader as sr
+from keras.utils import to_categorical
 
 
 def load_mnist():
@@ -43,4 +45,41 @@ def load_usps(data_path='./data/usps'):
     y = np.concatenate((labels_train, labels_test))
     print('USPS samples', x.shape)
     return x, y
+
+def load_fasta():
+    contigs = sr.readContigs("/share_data/cami_low/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta")
+    print(f'Parsed {len(contigs.keys())} contigs')
+ 
+    # Will be translated into label y
+    #first_key = list(contigs.keys())[0]
+    #print(first_key)
+    
+    # will be the x dataset
+    #first_val = list(contigs.values())[0]
+    #t = bytes(first_val).decode()
+    #print(t)
+    
+    s = map(myDecoder, list(contigs.values()))
+    #print(list(s))
+          
+    data = list(s)
+    x = np.array(data)
+    #x = x.reshape(-1, 28, 28, 1).astype('float32')
+    #x = x/255.
+    print('FASTA:', x.shape)
+    return x, None
+
+def myMapCharsToInteger(data):
+  # define universe of possible input values
+  seq = 'ACTGN'
+  # define a mapping of chars to integers
+  char_to_int = dict((c, i) for i, c in enumerate(seq))
+  # integer encode input data
+  integer_encoded = [char_to_int[char] for char in data]
+  return integer_encoded
+
+def myDecoder(n):
+  #return to_categorical(myMapCharsToInteger(bytes(n).decode()))
+  decoded = bytes(n).decode()
+  return to_categorical(myMapCharsToInteger(decoded))
 
