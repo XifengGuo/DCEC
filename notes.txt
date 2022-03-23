@@ -1,0 +1,4 @@
+usps
+x -> ndarray (9298, 16, 16, 1)
+mnist
+x -> ndaary (70000, 28, 28, 1)
