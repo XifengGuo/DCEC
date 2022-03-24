@@ -1,6 +1,8 @@
+from base64 import decode
 import numpy as np
 import reader.SequenceReader as sr
 from keras.utils import to_categorical
+import matplotlib.pyplot as plt
 
 
 def load_mnist():
@@ -49,37 +51,60 @@ def load_usps(data_path='./data/usps'):
 def load_fasta():
     contigs = sr.readContigs("/share_data/cami_low/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta")
     print(f'Parsed {len(contigs.keys())} contigs')
- 
-    # Will be translated into label y
-    #first_key = list(contigs.keys())[0]
-    #print(first_key)
     
-    # will be the x dataset
-    #first_val = list(contigs.values())[0]
-    #t = bytes(first_val).decode()
-    #print(t)
+    lst = list(contigs.values())
+     
+    # an attempt to display graph of seq. lengths, so that we can see the extreme values and delete them:
+    # the maximum length is over 1 mil, the sequences legth is not balanced:
     
-    s = map(myDecoder, list(contigs.values()))
-    #print(list(s))
-          
+    # maxlength = max(data)
+    # names = np.arange(19499)
+    # plt.bar(data, names)
+    # plt.show()
+      
+    s = map(myDecoder, lst)
+              
     data = list(s)
+    
+    # maxlength = max(data)
+    for i in data:
+        if i.shape != (1000, 6):
+            data.remove(i)
+    
     x = np.array(data)
-    #x = x.reshape(-1, 28, 28, 1).astype('float32')
-    #x = x/255.
+    print('FASTA:', x.shape)
+    x = x.reshape(-1, 1000, 6, 1).astype('float32')
     print('FASTA:', x.shape)
     return x, None
 
 def myMapCharsToInteger(data):
   # define universe of possible input values
-  seq = 'ACTGN'
+  seq = 'ACTGNO'
   # define a mapping of chars to integers
   char_to_int = dict((c, i) for i, c in enumerate(seq))
   # integer encode input data
   integer_encoded = [char_to_int[char] for char in data]
   return integer_encoded
 
-def myDecoder(n):
-  #return to_categorical(myMapCharsToInteger(bytes(n).decode()))
-  decoded = bytes(n).decode()
-  return to_categorical(myMapCharsToInteger(decoded))
+def setCorrectSequenceLength(n, size):
+    #an ugly fix - sequences that didn't contain O or N were one hot encoded in a shape (length, 4) or (length, 5) which was causing problems with reshaping
+    #se we make sure there is at least one N and one O in every sequence
+   if len(n) > size:
+       return 'N' + n[:size-2]+"O"
+   elif len(n) < size:
+       return 'N' + n.ljust(size-1, "O")
+   elif len(n) == size:
+       return 'N' + n[:size-2]+"O"
+    
 
+def myDecoder(n):
+  decoded = bytes(n).decode()
+  
+  #the length of sequences is set very short (1000) for debugging purposes
+  decoded = setCorrectSequenceLength(decoded, 1000)
+  #return decoded
+  return to_categorical(myMapCharsToInteger(decoded))
+ 
+def strLengths(n):
+  decoded = bytes(n).decode()
+  return len(decoded)
