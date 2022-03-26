@@ -51,9 +51,7 @@ def load_usps(data_path='./data/usps'):
 def load_fasta():
     contigs = sr.readContigs("/share_data/cami_low/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta")
     print(f'Parsed {len(contigs.keys())} contigs')
-    
     lst = list(contigs.values())
-     
     # an attempt to display graph of seq. lengths, so that we can see the extreme values and delete them:
     # the maximum length is over 1 mil, the sequences legth is not balanced:
     
@@ -68,20 +66,22 @@ def load_fasta():
     
     # maxlength = max(data)
     for i in data:
-        if i.shape != (1000, 6):
+        if i.shape != (1000, 5):
             data.remove(i)
     
     x = np.array(data)
     print('FASTA:', x.shape)
-    x = x.reshape(-1, 1000, 6, 1).astype('float32')
+    x = x.reshape(-1, 1000, 5, 1).astype('float32')
     print('FASTA:', x.shape)
     return x, None
 
 def myMapCharsToInteger(data):
   # define universe of possible input values
-  seq = 'ACTGNO'
+  seq = 'ACTGO'
   # define a mapping of chars to integers
   char_to_int = dict((c, i) for i, c in enumerate(seq))
+  #print("Chars to int")
+  #print(char_to_int)
   # integer encode input data
   integer_encoded = [char_to_int[char] for char in data]
   return integer_encoded
@@ -89,21 +89,20 @@ def myMapCharsToInteger(data):
 def setCorrectSequenceLength(n, size):
     #an ugly fix - sequences that didn't contain O or N were one hot encoded in a shape (length, 4) or (length, 5) which was causing problems with reshaping
     #se we make sure there is at least one N and one O in every sequence
-   if len(n) > size:
-       return 'N' + n[:size-2]+"O"
-   elif len(n) < size:
-       return 'N' + n.ljust(size-1, "O")
-   elif len(n) == size:
-       return 'N' + n[:size-2]+"O"
-    
+    if len(n) > size:
+        return n[:size]
+    elif len(n) < size:
+        return n.ljust(size, "O")
+    return n
+
+
 
 def myDecoder(n):
   decoded = bytes(n).decode()
-  
-  #the length of sequences is set very short (1000) for debugging purposes
+  most_common_nucleotide = max(set(decoded), key=decoded.count)
   decoded = setCorrectSequenceLength(decoded, 1000)
-  #return decoded
-  return to_categorical(myMapCharsToInteger(decoded))
+  decoded = [most_common_nucleotide if x == 'N' else x for x in decoded]
+  return to_categorical(myMapCharsToInteger(decoded), num_classes=5)
  
 def strLengths(n):
   decoded = bytes(n).decode()
