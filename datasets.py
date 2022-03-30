@@ -1,7 +1,8 @@
 from base64 import decode
 import numpy as np
+import tensorflow
+
 import reader.SequenceReader as sr
-from keras.utils import to_categorical
 import matplotlib.pyplot as plt
 
 
@@ -96,13 +97,13 @@ def setCorrectSequenceLength(n, size):
     return n
 
 
-
 def myDecoder(n):
   decoded = bytes(n).decode()
   most_common_nucleotide = max(set(decoded), key=decoded.count)
   decoded = setCorrectSequenceLength(decoded, 1000)
   decoded = [most_common_nucleotide if x == 'N' else x for x in decoded]
-  return to_categorical(myMapCharsToInteger(decoded), num_classes=5)
+  return tensorflow.keras.utils.to_categorical(myMapCharsToInteger(decoded), num_classes=5)
+ 
  
 def strLengths(n):
   decoded = bytes(n).decode()

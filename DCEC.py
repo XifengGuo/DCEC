@@ -1,15 +1,13 @@
 from time import time
 import numpy as np
 import keras.backend as K
-from keras.engine.topology import Layer, InputSpec
-from keras.models import Model
-from keras.utils.vis_utils import plot_model
+from tensorflow import keras
 from sklearn.cluster import KMeans
 import metrics
 from ConvAE import CAE
 
 
-class ClusteringLayer(Layer):
+class ClusteringLayer(keras.layers.Layer):
     """
     Clustering layer converts input sample (feature) to soft label, i.e. a vector that represents the probability of the
     sample belonging to each cluster. The probability is calculated with student's t-distribution.
@@ -35,13 +33,13 @@ class ClusteringLayer(Layer):
         self.n_clusters = n_clusters
         self.alpha = alpha
         self.initial_weights = weights
-        self.input_spec = InputSpec(ndim=2)
+        self.input_spec = keras.layers.InputSpec(ndim=2)
 
     def build(self, input_shape):
         assert len(input_shape) == 2
         input_dim = input_shape[1]
-        self.input_spec = InputSpec(dtype=K.floatx(), shape=(None, input_dim))
-        self.clusters = self.add_weight((self.n_clusters, input_dim), initializer='glorot_uniform', name='clusters')
+        self.input_spec = keras.layers.InputSpec(dtype=K.floatx(), shape=(None, input_dim))
+        self.clusters = self.add_weight(shape=(self.n_clusters, input_dim), initializer='glorot_uniform', name='clusters')
         if self.initial_weights is not None:
             self.set_weights(self.initial_weights)
             del self.initial_weights
@@ -87,12 +85,12 @@ class DCEC(object):
 
         self.cae = CAE(input_shape, filters)
         hidden = self.cae.get_layer(name='embedding').output
-        self.encoder = Model(inputs=self.cae.input, outputs=hidden)
+        self.encoder = keras.models.Model(inputs=self.cae.input, outputs=hidden)
 
         # Define DCEC model
-        clustering_layer = ClusteringLayer(self.n_clusters, name='clustering')(hidden)
-        self.model = Model(inputs=self.cae.input,
-                           outputs=[clustering_layer, self.cae.output])
+        self.clustering_layer = ClusteringLayer(self.n_clusters, name='clustering')(hidden)
+        self.model = keras.models.Model(inputs=self.cae.input,
+                           outputs=[self.clustering_layer, self.cae.output])
 
     def pretrain(self, x, batch_size=256, epochs=200, optimizer='adam', save_dir='results/temp'):
         print('...Pretraining...')
@@ -150,7 +148,7 @@ class DCEC(object):
         kmeans = KMeans(n_clusters=self.n_clusters, n_init=20)
         self.y_pred = kmeans.fit_predict(self.encoder.predict(x))
         y_pred_last = np.copy(self.y_pred)
-        self.model.get_layer(name='clustering').set_weights([kmeans.cluster_centers_])
+        self.model.get_layer("clustering").set_weights([kmeans.cluster_centers_])
 
         # Step 3: deep clustering
         # logging file
@@ -253,7 +251,7 @@ if __name__ == "__main__":
 
     # prepare the DCEC model
     dcec = DCEC(input_shape=x.shape[1:], filters=[32, 64, 128, 10], n_clusters=args.n_clusters)
-    plot_model(dcec.model, to_file=args.save_dir + '/dcec_model.png', show_shapes=True)
+    keras.utils.plot_model(dcec.model, to_file=args.save_dir + '/dcec_model.png', show_shapes=True)
     dcec.model.summary()
 
     # begin clustering.
