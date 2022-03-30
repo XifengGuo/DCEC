@@ -222,7 +222,7 @@ if __name__ == "__main__":
     # setting the hyper parameters
     import argparse
     parser = argparse.ArgumentParser(description='train')
-    parser.add_argument('dataset', default='mnist', choices=['mnist', 'usps', 'mnist-test'])
+    parser.add_argument('dataset', default='mnist', choices=['mnist', 'usps', 'mnist-test', 'fasta'])
     parser.add_argument('--n_clusters', default=10, type=int)
     parser.add_argument('--batch_size', default=256, type=int)
     parser.add_argument('--maxiter', default=2e4, type=int)
@@ -240,7 +240,7 @@ if __name__ == "__main__":
         os.makedirs(args.save_dir)
 
     # load dataset
-    from datasets import load_mnist, load_usps
+    from datasets import load_mnist, load_usps, load_fasta
     if args.dataset == 'mnist':
         x, y = load_mnist()
     elif args.dataset == 'usps':
@@ -248,6 +248,8 @@ if __name__ == "__main__":
     elif args.dataset == 'mnist-test':
         x, y = load_mnist()
         x, y = x[60000:], y[60000:]
+    elif args.dataset == 'fasta':
+        x, y = load_fasta()
 
     # prepare the DCEC model
     dcec = DCEC(input_shape=x.shape[1:], filters=[32, 64, 128, 10], n_clusters=args.n_clusters)
