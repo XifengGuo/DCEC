@@ -4,7 +4,7 @@ import numpy as np
 
 def CAE(input_shape=(1000, 4, 1), filters=[32, 64, 128, 10]):
     model = keras.models.Sequential()
-
+    model.add(keras.layers.Masking(mask_value=-1., input_shape=input_shape))
     if input_shape[0] % 8 == 0:
         pad3 = 'same'
     else:
