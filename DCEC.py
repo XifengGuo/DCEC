@@ -261,5 +261,6 @@ if __name__ == "__main__":
              update_interval=args.update_interval,
              save_dir=args.save_dir,
              cae_weights=args.cae_weights)
-    y_pred = dcec.y_pred
-    print('acc = %.4f, nmi = %.4f, ari = %.4f' % (metrics.acc(y, y_pred), metrics.nmi(y, y_pred), metrics.ari(y, y_pred)))
+    if y is not None:
+        y_pred = dcec.y_pred
+        print('acc = %.4f, nmi = %.4f, ari = %.4f' % (metrics.acc(y, y_pred), metrics.nmi(y, y_pred), metrics.ari(y, y_pred)))
