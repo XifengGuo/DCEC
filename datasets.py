@@ -67,12 +67,12 @@ def load_fasta():
     
     # maxlength = max(data)
     for i in data:
-        if i.shape != (1000, 5):
+        if i.shape != (1000, 4):
             data.remove(i)
     
     x = np.array(data)
     print('FASTA:', x.shape)
-    x = x.reshape(-1, 1000, 5, 1).astype('float32')
+    x = x.reshape(-1, 1000, 4, 1).astype('float32')
     print('FASTA:', x.shape)
     return x, None
 
@@ -96,14 +96,31 @@ def setCorrectSequenceLength(n, size):
         return n.ljust(size, "O")
     return n
 
+def setSequenceLength(n, size):
+    if len(n) > size:
+        return n[:size]
+    elif len(n) < size:
+        padding = np.array([[-1., -1., -1., -1.]] *(size - len(n)))
+        n = np.concatenate((n, padding), axis=0)
+    return n
+
 
 def myDecoder(n):
+  """
   decoded = bytes(n).decode()
   most_common_nucleotide = max(set(decoded), key=decoded.count)
   decoded = setCorrectSequenceLength(decoded, 1000)
   decoded = [most_common_nucleotide if x == 'N' else x for x in decoded]
-  return tensorflow.keras.utils.to_categorical(myMapCharsToInteger(decoded), num_classes=5)
- 
+  print(decoded)
+  return to_categorical(myMapCharsToInteger(decoded), num_classes=5)
+  """
+  decoded = bytes(n).decode()
+  most_common_nucleotide = max(set(decoded), key=decoded.count)
+  decoded = [most_common_nucleotide if x == 'N' else x for x in decoded]
+  encodings = tensorflow.keras.utils.to_categorical(myMapCharsToInteger(decoded), num_classes=4)
+  encodings = setSequenceLength(encodings, 1000)
+  return encodings
+
  
 def strLengths(n):
   decoded = bytes(n).decode()
