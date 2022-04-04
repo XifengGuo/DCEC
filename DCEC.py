@@ -78,6 +78,7 @@ class DCEC(object):
         super(DCEC, self).__init__()
 
         self.n_clusters = n_clusters
+        print(f'Set cluster number to {self.n_clusters}.')
         self.input_shape = input_shape
         self.alpha = alpha
         self.pretrained = False
@@ -103,7 +104,8 @@ class DCEC(object):
         self.cae.fit(x, x, batch_size=batch_size, epochs=epochs, callbacks=[csv_logger])
         print('Pretraining time: ', time() - t0)
         self.cae.save(save_dir + '/pretrain_cae_model.h5')
-        print('Pretrained weights are saved to %s/pretrain_cae_model.h5' % save_dir)
+        print(f'Pretrained weights are saved to {save_dir}/pretrain_cae_model.h5, reload weights')
+        self.cae.load_weights(save_dir + '/pretrain_cae_model.h5')
         self.pretrained = True
 
     def load_weights(self, weights_path):
@@ -126,10 +128,6 @@ class DCEC(object):
 
     def fit(self, x, y=None, batch_size=256, maxiter=2e4, tol=1e-3,
             update_interval=140, cae_weights=None, save_dir='./results/temp'):
-
-        print('Update interval', update_interval)
-        save_interval = x.shape[0] / batch_size * 5
-        print('Save interval', save_interval)
 
         # Step 1: pretrain if necessary
         t0 = time()
@@ -159,7 +157,9 @@ class DCEC(object):
         logwriter = csv.DictWriter(logfile, fieldnames=['iter', 'acc', 'nmi', 'ari', 'L', 'Lc', 'Lr'])
         logwriter.writeheader()
 
-        t2 = time()
+        save_interval = x.shape[0] / batch_size * 5
+        print(f'Save interval: {save_interval}, Update interval: {update_interval}.')
+
         loss = [0, 0, 0]
         index = 0
         for ite in range(int(maxiter)):
@@ -199,10 +199,13 @@ class DCEC(object):
                 index += 1
 
             # save intermediate model
-            if ite % save_interval == 0:
+            if ite != 0 and ite % save_interval == 0:
                 # save DCEC model checkpoints
-                print('saving model to:', save_dir + '/dcec_model_' + str(ite) + '.h5')
-                self.model.save_weights(save_dir + '/dcec_model_' + str(ite) + '.h5')
+                file = save_dir + '/dcec_model_' + str(ite) + '.h5'
+                print(f'saving model to: {file} of iteration={ite}')
+                self.model.save_weights(file)
+                print(f'saved model to: {file} of iteration={ite}, reload weight.')
+                self.model.load_weights(file)
 
             ite += 1
 
@@ -230,6 +233,7 @@ if __name__ == "__main__":
     parser.add_argument('--tol', default=0.001, type=float)
     parser.add_argument('--cae_weights', default=None, help='This argument must be given')
     parser.add_argument('--save_dir', default='results/temp')
+    parser.add_argument('--numberOfSamples', default=None, type=int)
     args = parser.parse_args()
     print(args)
 
@@ -239,6 +243,7 @@ if __name__ == "__main__":
 
     # load dataset
     from datasets import load_mnist, load_usps, load_fasta
+    nClusters = args.n_clusters
     if args.dataset == 'mnist':
         x, y = load_mnist()
     elif args.dataset == 'usps':
@@ -247,7 +252,7 @@ if __name__ == "__main__":
         x, y = load_mnist()
         x, y = x[60000:], y[60000:]
     elif args.dataset == 'fasta':
-        x, y = load_fasta()
+        x, y = load_fasta(args.numberOfSamples)
 
     # prepare the DCEC model
     dcec = DCEC(input_shape=x.shape[1:], filters=[32, 64, 128, 10], n_clusters=args.n_clusters)
@@ -257,10 +262,7 @@ if __name__ == "__main__":
     # begin clustering.
     optimizer = 'adam'
     dcec.compile(loss=['kld', 'mse'], loss_weights=[args.gamma, 1], optimizer=optimizer)
-    dcec.fit(x, y=y, tol=args.tol, maxiter=args.maxiter,
-             update_interval=args.update_interval,
-             save_dir=args.save_dir,
-             cae_weights=args.cae_weights)
+    dcec.fit(x, y=y, tol=args.tol, maxiter=args.maxiter, update_interval=args.update_interval, save_dir=args.save_dir, cae_weights=args.cae_weights, batch_size=args.batch_size)
     if y is not None:
         y_pred = dcec.y_pred
         print('acc = %.4f, nmi = %.4f, ari = %.4f' % (metrics.acc(y, y_pred), metrics.nmi(y, y_pred), metrics.ari(y, y_pred)))

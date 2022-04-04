@@ -49,10 +49,9 @@ def load_usps(data_path='./data/usps'):
     print('USPS samples', x.shape)
     return x, y
 
-def load_fasta():
-    contigs = sr.readContigs("/share_data/cami_low/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta")
-    print(f'Parsed {len(contigs.keys())} contigs')
-    lst = list(contigs.values())
+
+def load_fasta(numberOfSamples=None):
+    lst = getSequenceSamples(numberOfSamples)
     # an attempt to display graph of seq. lengths, so that we can see the extreme values and delete them:
     # the maximum length is over 1 mil, the sequences legth is not balanced:
     
@@ -76,6 +75,15 @@ def load_fasta():
     print('FASTA:', x.shape)
     return x, None
 
+
+def getSequenceSamples(numberOfSamples=None):
+    fastaFile = "/share_data/cami_low/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta"
+    contigs = sr.readContigs(fastaFile, numberOfSamples=numberOfSamples)
+    print(f'Parsed {len(contigs.keys())} contigs')
+    lst = list(contigs.values())
+    return lst
+
+
 def myMapCharsToInteger(data):
   # define universe of possible input values
   seq = 'ACTGO'
@@ -86,6 +94,7 @@ def myMapCharsToInteger(data):
   # integer encode input data
   integer_encoded = [char_to_int[char] for char in data]
   return integer_encoded
+
 
 def setCorrectSequenceLength(n, size):
     #an ugly fix - sequences that didn't contain O or N were one hot encoded in a shape (length, 4) or (length, 5) which was causing problems with reshaping
