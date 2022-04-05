@@ -51,7 +51,7 @@ def load_usps(data_path='./data/usps'):
 
 
 def load_fasta(numberOfSamples=None):
-    lst = getSequenceSamples(numberOfSamples)
+    lst = get_sequence_samples(numberOfSamples)
     # an attempt to display graph of seq. lengths, so that we can see the extreme values and delete them:
     # the maximum length is over 1 mil, the sequences legth is not balanced:
     
@@ -76,9 +76,9 @@ def load_fasta(numberOfSamples=None):
     return x, None
 
 
-def getSequenceSamples(numberOfSamples=None):
+def get_sequence_samples(n_samples=None):
     fastaFile = "/share_data/cami_low/CAMI_low_RL_S001__insert_270_GoldStandardAssembly.fasta"
-    contigs = sr.readContigs(fastaFile, numberOfSamples=numberOfSamples)
+    contigs = sr.readContigs(fastaFile, numberOfSamples=n_samples)
     print(f'Parsed {len(contigs.keys())} contigs')
     lst = list(contigs.values())
     return lst

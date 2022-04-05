@@ -233,7 +233,7 @@ if __name__ == "__main__":
     parser.add_argument('--tol', default=0.001, type=float)
     parser.add_argument('--cae_weights', default=None, help='This argument must be given')
     parser.add_argument('--save_dir', default='results/temp')
-    parser.add_argument('--numberOfSamples', default=None, type=int)
+    parser.add_argument('--n_samples', default=None, type=int)
     args = parser.parse_args()
     print(args)
 
@@ -243,7 +243,6 @@ if __name__ == "__main__":
 
     # load dataset
     from datasets import load_mnist, load_usps, load_fasta
-    nClusters = args.n_clusters
     if args.dataset == 'mnist':
         x, y = load_mnist()
     elif args.dataset == 'usps':
@@ -252,7 +251,7 @@ if __name__ == "__main__":
         x, y = load_mnist()
         x, y = x[60000:], y[60000:]
     elif args.dataset == 'fasta':
-        x, y = load_fasta(args.numberOfSamples)
+        x, y = load_fasta(args.n_samples)
 
     # prepare the DCEC model
     dcec = DCEC(input_shape=x.shape[1:], filters=[32, 64, 128, 10], n_clusters=args.n_clusters)
@@ -262,7 +261,8 @@ if __name__ == "__main__":
     # begin clustering.
     optimizer = 'adam'
     dcec.compile(loss=['kld', 'mse'], loss_weights=[args.gamma, 1], optimizer=optimizer)
-    dcec.fit(x, y=y, tol=args.tol, maxiter=args.maxiter, update_interval=args.update_interval, save_dir=args.save_dir, cae_weights=args.cae_weights, batch_size=args.batch_size)
+    dcec.fit(x, y=y, tol=args.tol, maxiter=args.maxiter, update_interval=args.update_interval, save_dir=args.save_dir,
+             cae_weights=args.cae_weights, batch_size=args.batch_size)
     if y is not None:
         y_pred = dcec.y_pred
         print('acc = %.4f, nmi = %.4f, ari = %.4f' % (metrics.acc(y, y_pred), metrics.nmi(y, y_pred), metrics.ari(y, y_pred)))
