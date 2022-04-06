@@ -1,4 +1,8 @@
-usps
-x -> ndarray (9298, 16, 16, 1)
-mnist
-x -> ndaary (70000, 28, 28, 1)
+--cae_weights=results/temp/pretrain_cae_model.h5
+
+1. use tools conda profile
+conda activate tools
+2. convert to bin process list
+~/Projects/amber/src/utils/convert_fasta_bins_to_biobox_format.py ~/Projects/DCEC/results/fasta/bins/*.fna -o dcec_amber/dcec-bins.tsv
+3. execute amber
+amber.py -g gsa_mapping_with_length.binning  dcec_amber/dcec-bins.tsv -l DCEC -o dcec_amber/validation

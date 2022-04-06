@@ -1,5 +1,5 @@
 
-def readContigs(fastaFile, minLength=100):
+def readContigs(fastaFile, minLength=100, numberOfSamples=None, onlySequence=True):
     """Parses a FASTA file open in binary reading mode.
 
     Input:
@@ -14,12 +14,20 @@ def readContigs(fastaFile, minLength=100):
         raise ValueError('Minlength must be at least 4, not {}'.format(minLength))
 
     raws = {}
+    noOfEntries = 0
     with open(fastaFile, 'rb') as file:
         entries = getFastaByteIterator(file)
         for entry in entries:
-            if len(entry) < minLength:
-                continue
-            raws[entry.header] = entry.sequence
+            if numberOfSamples is not None and noOfEntries >= numberOfSamples:
+                break
+            else:
+                if len(entry) < minLength:
+                    continue
+                if onlySequence:
+                    raws[entry.header] = entry.sequence
+                else:
+                    raws[entry.header] = entry
+                noOfEntries += 1
     return raws
 
 
