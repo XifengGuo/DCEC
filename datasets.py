@@ -50,28 +50,16 @@ def load_usps(data_path='./data/usps'):
     return x, y
 
 
-def load_fasta(numberOfSamples=None):
-    lst = get_sequence_samples(numberOfSamples)
-    # an attempt to display graph of seq. lengths, so that we can see the extreme values and delete them:
-    # the maximum length is over 1 mil, the sequences legth is not balanced:
-    
-    # maxlength = max(data)
-    # names = np.arange(19499)
-    # plt.bar(data, names)
-    # plt.show()
-      
-    s = map(myDecoder, lst)
-              
-    data = list(s)
-    
-    # maxlength = max(data)
+def load_fasta(n_samples=None, contig_len=1000):
+    lst = get_sequence_samples(n_samples)
+    data = [decode(contig, contig_len) for contig in lst]
     for i in data:
-        if i.shape != (1000, 4):
+        if i.shape != (contig_len, 4):
             data.remove(i)
     
     x = np.array(data)
     print('FASTA:', x.shape)
-    x = x.reshape(-1, 1000, 4, 1).astype('float32')
+    x = x.reshape(-1, contig_len, 4, 1).astype('float32')
     print('FASTA:', x.shape)
     return x, None
 
@@ -114,7 +102,7 @@ def setSequenceLength(n, size):
     return n
 
 
-def myDecoder(n):
+def decode(n, contig_len=20000):
   """
   decoded = bytes(n).decode()
   most_common_nucleotide = max(set(decoded), key=decoded.count)
@@ -127,7 +115,7 @@ def myDecoder(n):
   most_common_nucleotide = max(set(decoded), key=decoded.count)
   decoded = [most_common_nucleotide if x == 'N' else x for x in decoded]
   encodings = tensorflow.keras.utils.to_categorical(myMapCharsToInteger(decoded), num_classes=4)
-  encodings = setSequenceLength(encodings, 1000)
+  encodings = setSequenceLength(encodings, contig_len)
   return encodings
 
  
