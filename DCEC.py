@@ -114,8 +114,28 @@ class DCEC(object):
     def extract_feature(self, x):  # extract features from before clustering layer
         return self.encoder.predict(x)
 
-    def predict(self, x):
-        q, _ = self.model.predict(x, verbose=0)
+    def predict(self, x, batch_size):
+        q = None
+        complete = False
+        p_index = 0
+        size = len(x)
+        while not complete:
+            x_ = x[p_index * batch_size:(p_index + 1) * batch_size]
+            x_ = [decode(i, self.contig_len) for i in x_]
+            x_ = np.array(x_)
+            x_ = x_.reshape(-1, self.contig_len, 4, 1).astype('float32')
+            q_, tmp = self.model.predict(x=x_, batch_size=None, verbose=0)
+            del tmp
+            if q is None:
+                q = q_
+            else:
+                q = np.append(q, q_, axis=0)
+            if (p_index + 1) * batch_size >= size:
+                complete = True
+                del q_
+                del x_
+            else:
+                p_index += 1
         return q.argmax(1)
 
     @staticmethod
@@ -154,13 +174,35 @@ class DCEC(object):
 
         loss = [0, 0, 0]
         index = 0
-        train_generator = DCECDataGenerator(x=x, batch_size=batch_size, contig_len=self.contig_len)
+        size = len(x)
+        # train_generator = DCECDataGenerator(x=x, batch_size=batch_size, contig_len=self.contig_len)
         # q, _ = self.model.predict(train_generator, verbose=0)
         # p = self.target_distribution(q)
         for ite in range(int(maxiter)):
             print(f'Current iteration {ite}.')
             if ite % update_interval == 0:
-                q, _ = self.model.predict(train_generator, verbose=0)
+                # predict on batch
+                q = None
+                complete = False
+                p_index = 0
+                while not complete:
+                    x_ = x[p_index * batch_size:(p_index + 1) * batch_size]
+                    x_ = [decode(i, self.contig_len) for i in x_]
+                    x_ = np.array(x_)
+                    x_ = x_.reshape(-1, self.contig_len, 4, 1).astype('float32')
+                    q_, tmp = self.model.predict(x=x_, batch_size=None, verbose=0)
+                    del tmp
+                    if q is None:
+                        q = q_
+                    else:
+                        q = np.append(q, q_, axis=0)
+                    if (p_index + 1) * batch_size >= size:
+                        complete = True
+                        del q_
+                        del x_
+                    else:
+                        p_index += 1
+
                 p = self.target_distribution(q)  # update the auxiliary target distribution p
 
                 # evaluate the clustering performance
@@ -184,8 +226,7 @@ class DCEC(object):
                     break
 
             # train on batch
-            size = len(x)
-            if (index + 1) * batch_size > size:
+            if (index + 1) * batch_size >= size:
                 x_ = x[index * batch_size::]
                 x_ = [decode(i, self.contig_len) for i in x_]
                 x_ = np.array(x_)
@@ -201,6 +242,9 @@ class DCEC(object):
                 y_ = p[index * batch_size:(index + 1) * batch_size]
                 loss = self.model.train_on_batch(x=x_, y=[y_, x_])
                 index += 1
+
+            del x_
+            del y_
 
             # save intermediate model
             if ite != 0 and ite % save_interval == 0:

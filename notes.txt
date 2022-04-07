@@ -4,5 +4,16 @@
 conda activate tools
 2. convert to bin process list
 ~/Projects/amber/src/utils/convert_fasta_bins_to_biobox_format.py ~/Projects/DCEC/results/fasta/bins/*.fna -o dcec_amber/dcec-bins.tsv
+~/Projects/amber/src/utils/convert_fasta_bins_to_biobox_format.py ~/Projects/DCEC/results/debug1/bins/*.fna -o dcec_amber/dcec-bins.tsv
 3. execute amber
-amber.py -g gsa_mapping_with_length.binning  dcec_amber/dcec-bins.tsv -l DCEC -o dcec_amber/validation
+amber.py -g gsa_mapping_with_length.binning  dcec_amber/dcec-bins.tsv -l DCEC -o dcec_amber/validation1
+
+
+20k len & 200 iter
+Current iteration 196.
+Current iteration 197.
+Current iteration 198.
+Current iteration 199.
+saving model to: results/debug2/dcec_model_final.h5
+Clustering time: 10869.382817029953
+Total time:      10869.382817029953
