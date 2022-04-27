@@ -12,9 +12,8 @@ def mapBinAndContigNames(fastaDict, clusters):
         clusterName = str(val)
         if binsDict.get(clusterName) is None:
             binsDict[clusterName] = []
-        else:
-            contigName = contigNames[idx]
-            binsDict[clusterName].append(contigName)
+        contigName = contigNames[idx]
+        binsDict[clusterName].append(contigName)
     return binsDict
 
 
